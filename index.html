@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Libro de Reclamaciones | Los Primos de San Juan</title>
+<meta name="description" content="Libro de Reclamaciones virtual de Los Primos de San Juan, conforme al Código de Protección y Defensa del Consumidor (Ley N.° 29571).">
+<style>
+  :root {
+    --brand: #26392f;
+    --brand-dark: #1a2a22;
+    --bg: #faf6f1;
+    --card: #ffffff;
+    --text: #2b2420;
+    --muted: #6d625a;
+    --line: #e4dbd1;
+    --ok: #1f6f43;
+    --err: #b3261e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.5;
+  }
+  header {
+    background: #241915; color: #fff; padding: 28px 16px; text-align: center;
+  }
+  header h1 { margin: 0 0 4px; font-size: 1.6rem; }
+  header p { margin: 0; opacity: .9; font-size: .95rem; }
+  main { max-width: 860px; margin: 0 auto; padding: 20px 16px 48px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; margin-bottom: 18px;
+  }
+  .card h2 {
+    margin: 0 0 14px; font-size: 1.1rem; color: var(--brand-dark);
+    border-bottom: 2px solid var(--line); padding-bottom: 8px;
+  }
+  .provider dl { display: grid; grid-template-columns: 170px 1fr; gap: 6px 12px; margin: 0; font-size: .95rem; }
+  .provider dt { font-weight: 600; color: var(--muted); }
+  .provider dd { margin: 0; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .full { grid-column: 1 / -1; }
+  label { display: block; font-weight: 600; font-size: .9rem; margin-bottom: 4px; }
+  label .req { color: var(--err); }
+  input, select, textarea {
+    width: 100%; padding: 10px 12px; font: inherit; color: inherit;
+    border: 1px solid #cfc4b8; border-radius: 8px; background: #fff;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: 2px solid var(--brand); outline-offset: 1px; border-color: var(--brand);
+  }
+  textarea { min-height: 110px; resize: vertical; }
+  .hint { font-size: .82rem; color: var(--muted); margin-top: 4px; }
+  .radio-row { display: flex; gap: 18px; flex-wrap: wrap; }
+  .radio-row label { font-weight: 400; display: flex; align-items: center; gap: 6px; margin: 0; }
+  .radio-row input { width: auto; }
+  .check { display: flex; gap: 10px; align-items: flex-start; font-weight: 400; }
+  .check input { width: auto; margin-top: 4px; }
+  .info {
+    background: #edf2ee; border-left: 4px solid var(--brand); padding: 12px 14px;
+    border-radius: 6px; font-size: .9rem; margin-bottom: 18px;
+  }
+  .info ul { margin: 6px 0 0; padding-left: 20px; }
+  button {
+    font: inherit; font-weight: 600; cursor: pointer; border: 0; border-radius: 8px;
+    padding: 12px 22px; background: var(--brand); color: #fff;
+  }
+  button:hover { background: var(--brand-dark); }
+  button.secondary { background: #fff; color: var(--brand); border: 1px solid var(--brand); }
+  button.secondary:hover { background: #edf2ee; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+  .error { color: var(--err); font-size: .85rem; margin-top: 4px; display: none; }
+  .invalid input, .invalid select, .invalid textarea { border-color: var(--err); }
+  .invalid .error { display: block; }
+  .hidden { display: none !important; }
+  #sheet h2 { text-align: center; border: 0; font-size: 1.3rem; }
+  #sheet .num { text-align: center; font-weight: 700; font-size: 1.1rem; margin-bottom: 14px; }
+  #sheet table { width: 100%; border-collapse: collapse; font-size: .92rem; margin-bottom: 14px; }
+  #sheet th, #sheet td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+  #sheet th { background: #f6efe7; width: 34%; }
+  #sheet .sec { background: var(--brand); color: #fff; font-weight: 700; }
+  .status { padding: 10px 14px; border-radius: 8px; font-size: .9rem; margin-bottom: 12px; }
+  .status.ok { background: #e6f4ec; color: var(--ok); }
+  .status.warn { background: #fff4e0; color: #8a5a00; }
+  footer { text-align: center; color: var(--muted); font-size: .82rem; padding: 0 16px 32px; }
+  @media (max-width: 640px) {
+    .grid { grid-template-columns: 1fr; }
+    .provider dl { grid-template-columns: 1fr; }
+    .provider dt { margin-top: 6px; }
+  }
+  @media print {
+    header, #formView, .actions, .status, footer, .info { display: none !important; }
+    body { background: #fff; }
+    .card { border: 0; padding: 0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Libro de Reclamaciones</h1>
+  <p>Los Primos de San Juan</p>
+</header>
+
+<main>
+
+  <!-- Datos del proveedor -->
+  <section class="card provider" aria-label="Datos del establecimiento">
+    <h2>Datos del establecimiento</h2>
+    <dl>
+      <dt>Nombre comercial</dt><dd id="p-nombre"></dd>
+      <dt>Domicilio</dt><dd id="p-domicilio"></dd>
+      <dt>Teléfono</dt><dd id="p-telefono"></dd>
+      <dt>Correo electrónico</dt><dd id="p-email"></dd>
+      <dt>Instagram</dt><dd id="p-instagram"></dd>
+      <dt>Horario de atención</dt><dd id="p-horario" style="white-space:pre-line"></dd>
+    </dl>
+  </section>
+
+  <div id="formView">
+    <div class="info">
+      <strong>Antes de continuar</strong>
+      <ul>
+        <li><strong>Reclamo:</strong> disconformidad relacionada con los productos o servicios consumidos.</li>
+        <li><strong>Queja:</strong> disconformidad no relacionada con el producto o servicio, o malestar por la atención recibida.</li>
+        <li>La formulación del reclamo no impide acudir a otras vías de solución de controversias ni es requisito previo para interponer una denuncia ante el INDECOPI.</li>
+        <li>El proveedor debe dar respuesta al reclamo en un plazo no mayor a <strong>quince (15) días hábiles</strong>.</li>
+      </ul>
+    </div>
+
+    <form id="claimForm" novalidate>
+
+      <!-- 1. Consumidor -->
+      <section class="card">
+        <h2>1. Identificación del consumidor reclamante</h2>
+        <div class="grid">
+          <div class="full" data-field>
+            <label for="nombres">Nombres y apellidos <span class="req">*</span></label>
+            <input id="nombres" name="nombres" type="text" autocomplete="name" required>
+            <div class="error">Ingresa tu nombre completo.</div>
+          </div>
+          <div data-field>
+            <label for="tipoDoc">Tipo de documento <span class="req">*</span></label>
+            <select id="tipoDoc" name="tipoDoc" required>
+              <option value="DNI">DNI</option>
+              <option value="CE">Carné de extranjería</option>
+              <option value="PAS">Pasaporte</option>
+              <option value="RUC">RUC</option>
+            </select>
+          </div>
+          <div data-field>
+            <label for="numDoc">N.° de documento <span class="req">*</span></label>
+            <input id="numDoc" name="numDoc" type="text" inputmode="numeric" required>
+            <div class="error" id="numDocError">Ingresa un número de documento válido.</div>
+          </div>
+          <div class="full" data-field>
+            <label for="domicilio">Domicilio <span class="req">*</span></label>
+            <input id="domicilio" name="domicilio" type="text" autocomplete="street-address" required>
+            <div class="error">Ingresa tu domicilio.</div>
+          </div>
+          <div data-field>
+            <label for="telefono">Teléfono / celular <span class="req">*</span></label>
+            <input id="telefono" name="telefono" type="tel" autocomplete="tel" required>
+            <div class="error">Ingresa un teléfono de contacto.</div>
+          </div>
+          <div data-field>
+            <label for="email">Correo electrónico <span class="req">*</span></label>
+            <input id="email" name="email" type="email" autocomplete="email" required>
+            <div class="error">Ingresa un correo electrónico válido.</div>
+          </div>
+          <div class="full">
+            <label class="check"><input type="checkbox" id="esMenor"> El consumidor es menor de edad (completar datos del padre, madre o apoderado)</label>
+          </div>
+        </div>
+
+        <div id="tutorBlock" class="grid hidden" style="margin-top:14px">
+          <div class="full" data-field>
+            <label for="tutorNombre">Nombres y apellidos del padre, madre o apoderado <span class="req">*</span></label>
+            <input id="tutorNombre" name="tutorNombre" type="text">
+            <div class="error">Ingresa el nombre del padre, madre o apoderado.</div>
+          </div>
+          <div data-field>
+            <label for="tutorDoc">DNI / documento del padre, madre o apoderado <span class="req">*</span></label>
+            <input id="tutorDoc" name="tutorDoc" type="text" inputmode="numeric">
+            <div class="error">Ingresa el documento del padre, madre o apoderado.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Bien contratado -->
+      <section class="card">
+        <h2>2. Identificación del bien contratado</h2>
+        <div class="grid">
+          <div class="full" data-field>
+            <label>Tipo <span class="req">*</span></label>
+            <div class="radio-row">
+              <label><input type="radio" name="tipoBien" value="Producto" checked> Producto</label>
+              <label><input type="radio" name="tipoBien" value="Servicio"> Servicio</label>
+            </div>
+          </div>
+          <div data-field>
+            <label for="fechaConsumo">Fecha del consumo <span class="req">*</span></label>
+            <input id="fechaConsumo" name="fechaConsumo" type="date" required>
+            <div class="error">Indica la fecha del consumo.</div>
+          </div>
+          <div data-field>
+            <label for="monto">Monto reclamado (S/)</label>
+            <input id="monto" name="monto" type="number" min="0" step="0.01" placeholder="0.00">
+            <div class="hint">Déjalo vacío si no aplica.</div>
+          </div>
+          <div class="full" data-field>
+            <label for="descripcionBien">Descripción del producto o servicio <span class="req">*</span></label>
+            <input id="descripcionBien" name="descripcionBien" type="text" placeholder="Ej.: Almuerzo en el local, pedido por delivery, etc." required>
+            <div class="error">Describe el producto o servicio.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Detalle -->
+      <section class="card">
+        <h2>3. Detalle de la reclamación</h2>
+        <div class="grid">
+          <div class="full" data-field>
+            <label>Tipo de reclamación <span class="req">*</span></label>
+            <div class="radio-row">
+              <label><input type="radio" name="tipoReclamo" value="Reclamo" checked> Reclamo</label>
+              <label><input type="radio" name="tipoReclamo" value="Queja"> Queja</label>
+            </div>
+          </div>
+          <div class="full" data-field>
+            <label for="detalle">Detalle <span class="req">*</span></label>
+            <textarea id="detalle" name="detalle" required></textarea>
+            <div class="error">Describe lo ocurrido.</div>
+          </div>
+          <div class="full" data-field>
+            <label for="pedido">Pedido del consumidor <span class="req">*</span></label>
+            <textarea id="pedido" name="pedido" required></textarea>
+            <div class="error">Indica qué solución solicitas.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Consentimiento -->
+      <section class="card">
+        <div data-field>
+          <label class="check">
+            <input type="checkbox" id="consent" required>
+            <span>Declaro que la información consignada es veraz y autorizo el tratamiento de mis datos personales por parte de <strong class="nombreNegocio"></strong> con la única finalidad de atender mi reclamación, conforme a la Ley N.° 29733, Ley de Protección de Datos Personales. <span class="req">*</span></span>
+          </label>
+          <div class="error">Debes aceptar para continuar.</div>
+        </div>
+        <div class="actions">
+          <button type="submit">Registrar reclamación</button>
+          <button type="reset" class="secondary">Limpiar formulario</button>
+        </div>
+      </section>
+    </form>
+  </div>
+
+  <!-- Hoja de reclamación generada -->
+  <div id="sheetView" class="hidden">
+    <div id="statusMsg" class="status ok"></div>
+    <section class="card" id="sheet">
+      <h2>Hoja de Reclamación</h2>
+      <div class="num" id="sheetNum"></div>
+      <table id="sheetTable"></table>
+      <p style="font-size:.85rem;color:var(--muted)">
+        Observaciones y acciones adoptadas por el proveedor: se responderá al correo electrónico consignado en un plazo no mayor a 15 días hábiles.
+      </p>
+    </section>
+    <div class="actions">
+      <button type="button" id="btnPrint">Imprimir / Guardar como PDF</button>
+      <button type="button" class="secondary" id="btnMail">Enviar copia por correo</button>
+      <button type="button" class="secondary" id="btnNew">Registrar otra reclamación</button>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  Libro de Reclamaciones virtual conforme a la Ley N.° 29571 (Código de Protección y Defensa del Consumidor) y su Reglamento.<br>
+  © <span id="year"></span> <span class="nombreNegocio"></span>
+</footer>
+
+<script>
+/* =====================================================
+   CONFIGURACIÓN — EDITA ESTOS DATOS ANTES DE PUBLICAR
+   ===================================================== */
+const CONFIG = {
+  nombreComercial:"Los Primos de San Juan",
+  domicilio:      "José Manuel Iturregui 924, Surquillo, Lima, Perú",
+  telefono:       "+51 902 712 526",
+  instagram:      "@primosdesanjuan",
+  horario:        "Lun: 12:00 – 21:30\nMar: cerrado\nMié – Sáb: 12:00 – 21:30\nDom: 12:00 – 17:00",
+  // Correo del restaurante que recibirá las reclamaciones
+  emailDestino:   "info@losprimosdesanjuan.com",
+  // Opcional: endpoint de Formspree (https://formspree.io/f/xxxxxxx) para recibir
+  // la reclamación automáticamente sin abrir el correo del cliente.
+  formspreeUrl:   ""
+};
+/* ===================================================== */
+
+const $ = (id) => document.getElementById(id);
+let lastRecord = null;
+
+// Datos del proveedor en pantalla
+$("p-nombre").textContent = CONFIG.nombreComercial;
+$("p-domicilio").textContent = CONFIG.domicilio;
+$("p-telefono").textContent = CONFIG.telefono;
+$("p-email").textContent = CONFIG.emailDestino;
+$("p-instagram").textContent = CONFIG.instagram;
+$("p-horario").textContent = CONFIG.horario;
+document.querySelectorAll(".nombreNegocio").forEach(el => el.textContent = CONFIG.nombreComercial);
+$("year").textContent = new Date().getFullYear();
+
+// Fecha máxima de consumo = hoy
+function hoyISO() {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 10);
+}
+$("fechaConsumo").max = hoyISO();
+
+// Mostrar bloque de apoderado si es menor
+$("esMenor").addEventListener("change", (e) => {
+  $("tutorBlock").classList.toggle("hidden", !e.target.checked);
+});
+
+// Validación de documento según tipo
+function docValido(tipo, valor) {
+  const v = valor.trim();
+  if (tipo === "DNI") return /^\d{8}$/.test(v);
+  if (tipo === "RUC") return /^\d{11}$/.test(v);
+  if (tipo === "CE")  return /^[A-Za-z0-9]{9,12}$/.test(v);
+  return /^[A-Za-z0-9]{6,15}$/.test(v); // Pasaporte
+}
+
+function marcar(campoEl, valido) {
+  const wrap = campoEl.closest("[data-field]");
+  if (wrap) wrap.classList.toggle("invalid", !valido);
+  return valido;
+}
+
+function validar() {
+  let ok = true;
+  ["nombres","domicilio","telefono","fechaConsumo","descripcionBien","detalle","pedido"].forEach(id => {
+    const el = $(id);
+    ok = marcar(el, el.value.trim().length > 0) && ok;
+  });
+  ok = marcar($("email"), /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test($("email").value.trim())) && ok;
+  ok = marcar($("numDoc"), docValido($("tipoDoc").value, $("numDoc").value)) && ok;
+  ok = marcar($("consent"), $("consent").checked) && ok;
+  if ($("esMenor").checked) {
+    ok = marcar($("tutorNombre"), $("tutorNombre").value.trim().length > 0) && ok;
+    ok = marcar($("tutorDoc"), $("tutorDoc").value.trim().length > 0) && ok;
+  }
+  return ok;
+}
+
+// Número correlativo local (por navegador) + marca de tiempo para evitar duplicados
+function generarNumero() {
+  const year = new Date().getFullYear();
+  let n = 1;
+  try {
+    const key = "lr_correlativo_" + year;
+    n = (parseInt(localStorage.getItem(key) || "0", 10) || 0) + 1;
+    localStorage.setItem(key, String(n));
+  } catch (e) { n = Math.floor(Math.random() * 9000) + 1000; }
+  const hhmm = new Date().toTimeString().slice(0,5).replace(":", "");
+  return `LR-${year}-${String(n).padStart(4, "0")}-${hhmm}`;
+}
+
+function formatoFecha(iso) {
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+function construirRegistro() {
+  const f = $("claimForm");
+  const val = (n) => f.elements[n].value.trim();
+  const ahora = new Date();
+  return {
+    numero: generarNumero(),
+    fechaRegistro: ahora.toLocaleDateString("es-PE") + " " + ahora.toLocaleTimeString("es-PE", {hour:"2-digit", minute:"2-digit"}),
+    consumidor: {
+      nombres: val("nombres"),
+      documento: `${val("tipoDoc")} ${val("numDoc")}`,
+      domicilio: val("domicilio"),
+      telefono: val("telefono"),
+      email: val("email"),
+      menor: $("esMenor").checked,
+      tutor: $("esMenor").checked ? `${val("tutorNombre")} (${val("tutorDoc")})` : ""
+    },
+    bien: {
+      tipo: f.elements["tipoBien"].value,
+      descripcion: val("descripcionBien"),
+      fechaConsumo: formatoFecha(val("fechaConsumo")),
+      monto: val("monto") ? "S/ " + Number(val("monto")).toFixed(2) : "No aplica"
+    },
+    reclamo: {
+      tipo: f.elements["tipoReclamo"].value,
+      detalle: val("detalle"),
+      pedido: val("pedido")
+    }
+  };
+}
+
+function filasHoja(r) {
+  const filas = [
+    ["sec", "Datos del proveedor"],
+    ["Nombre comercial", CONFIG.nombreComercial],
+    ["Domicilio", CONFIG.domicilio],
+    ["Fecha y hora de registro", r.fechaRegistro],
+    ["sec", "1. Identificación del consumidor reclamante"],
+    ["Nombres y apellidos", r.consumidor.nombres],
+    ["Documento", r.consumidor.documento],
+    ["Domicilio", r.consumidor.domicilio],
+    ["Teléfono", r.consumidor.telefono],
+    ["Correo electrónico", r.consumidor.email]
+  ];
+  if (r.consumidor.menor) filas.push(["Padre, madre o apoderado", r.consumidor.tutor]);
+  filas.push(
+    ["sec", "2. Identificación del bien contratado"],
+    ["Tipo", r.bien.tipo],
+    ["Descripción", r.bien.descripcion],
+    ["Fecha del consumo", r.bien.fechaConsumo],
+    ["Monto reclamado", r.bien.monto],
+    ["sec", "3. Detalle de la reclamación"],
+    ["Tipo", r.reclamo.tipo],
+    ["Detalle", r.reclamo.detalle],
+    ["Pedido del consumidor", r.reclamo.pedido]
+  );
+  return filas;
+}
+
+function renderHoja(r) {
+  $("sheetNum").textContent = "N.° " + r.numero;
+  const table = $("sheetTable");
+  table.innerHTML = "";
+  filasHoja(r).forEach(([a, b]) => {
+    const tr = document.createElement("tr");
+    if (a === "sec") {
+      const td = document.createElement("td");
+      td.colSpan = 2; td.className = "sec"; td.textContent = b;
+      tr.appendChild(td);
+    } else {
+      const th = document.createElement("th"); th.textContent = a;
+      const td = document.createElement("td"); td.textContent = b; td.style.whiteSpace = "pre-wrap";
+      tr.append(th, td);
+    }
+    table.appendChild(tr);
+  });
+}
+
+function textoPlano(r) {
+  const lineas = [`HOJA DE RECLAMACIÓN N.° ${r.numero}`, CONFIG.nombreComercial, ""];
+  filasHoja(r).forEach(([a, b]) => {
+    lineas.push(a === "sec" ? `\n== ${b} ==` : `${a}: ${b}`);
+  });
+  return lineas.join("\n");
+}
+
+function mostrarEstado(tipo, msg) {
+  const el = $("statusMsg");
+  el.className = "status " + tipo;
+  el.textContent = msg;
+}
+
+async function enviarFormspree(r) {
+  const res = await fetch(CONFIG.formspreeUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+    body: JSON.stringify({
+      _subject: `Nueva ${r.reclamo.tipo.toLowerCase()} ${r.numero} - ${CONFIG.nombreComercial}`,
+      _replyto: r.consumidor.email,
+      numero: r.numero,
+      mensaje: textoPlano(r)
+    })
+  });
+  if (!res.ok) throw new Error("Error al enviar");
+}
+
+$("claimForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!validar()) {
+    const primero = document.querySelector(".invalid");
+    if (primero) primero.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+  lastRecord = construirRegistro();
+  renderHoja(lastRecord);
+  $("formView").classList.add("hidden");
+  $("sheetView").classList.remove("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+
+  if (CONFIG.formspreeUrl) {
+    try {
+      await enviarFormspree(lastRecord);
+      mostrarEstado("ok", "Tu reclamación fue registrada y enviada al establecimiento. Guarda o imprime esta hoja como constancia.");
+    } catch (err) {
+      mostrarEstado("warn", "No pudimos enviar la reclamación automáticamente. Usa el botón «Enviar copia por correo» y guarda esta hoja como constancia.");
+    }
+  } else {
+    mostrarEstado("warn", "Hoja generada. Para completar el registro, usa «Enviar copia por correo» y guarda esta hoja como constancia.");
+  }
+});
+
+$("btnPrint").addEventListener("click", () => window.print());
+
+$("btnMail").addEventListener("click", () => {
+  if (!lastRecord) return;
+  const asunto = encodeURIComponent(`${lastRecord.reclamo.tipo} ${lastRecord.numero} - ${CONFIG.nombreComercial}`);
+  const cuerpo = encodeURIComponent(textoPlano(lastRecord));
+  window.location.href = `mailto:${CONFIG.emailDestino}?cc=${encodeURIComponent(lastRecord.consumidor.email)}&subject=${asunto}&body=${cuerpo}`;
+});
+
+$("btnNew").addEventListener("click", () => {
+  $("claimForm").reset();
+  $("tutorBlock").classList.add("hidden");
+  document.querySelectorAll(".invalid").forEach(el => el.classList.remove("invalid"));
+  $("sheetView").classList.add("hidden");
+  $("formView").classList.remove("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+$("claimForm").addEventListener("reset", () => {
+  setTimeout(() => $("tutorBlock").classList.add("hidden"), 0);
+});
+</script>
+</body>
+</html>
