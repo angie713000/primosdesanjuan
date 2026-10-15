@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Libro de Reclamaciones | Los Primos de San Juan</title>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <meta name="description" content="Libro de Reclamaciones virtual de Los Primos de San Juan, conforme al Código de Protección y Defensa del Consumidor (Ley N.° 29571).">
 <style>
   :root {
@@ -295,9 +296,15 @@ const CONFIG = {
   horario:        "Lun: 12:00 – 21:30\nMar: cerrado\nMié – Sáb: 12:00 – 21:30\nDom: 12:00 – 17:00",
   // Correo del restaurante que recibirá las reclamaciones
   emailDestino:   "info@losprimosdesanjuan.com",
-  // Opcional: endpoint de Formspree (https://formspree.io/f/xxxxxxx) para recibir
-  // la reclamación automáticamente sin abrir el correo del cliente.
-  formspreeUrl:   ""
+  // Envío automático de correos con EmailJS (https://www.emailjs.com).
+  // Al registrar una reclamación se envía una copia al restaurante (emailDestino)
+  // y otra al correo de quien presentó el reclamo o la queja.
+  // Completa estos 3 datos (ver README.md):
+  emailjs: {
+    publicKey:  "",
+    serviceId:  "",
+    templateId: ""
+  }
 };
 /* ===================================================== */
 
@@ -467,18 +474,39 @@ function mostrarEstado(tipo, msg) {
   el.textContent = msg;
 }
 
-async function enviarFormspree(r) {
-  const res = await fetch(CONFIG.formspreeUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Accept": "application/json" },
-    body: JSON.stringify({
-      _subject: `Nueva ${r.reclamo.tipo.toLowerCase()} ${r.numero} - ${CONFIG.nombreComercial}`,
-      _replyto: r.consumidor.email,
-      numero: r.numero,
-      mensaje: textoPlano(r)
+function emailjsListo() {
+  const c = CONFIG.emailjs || {};
+  return typeof emailjs !== "undefined" && c.publicKey && c.serviceId && c.templateId;
+}
+
+// Envía dos correos: uno al restaurante y otro al consumidor
+async function enviarCorreos(r) {
+  const c = CONFIG.emailjs;
+  const tipo = r.reclamo.tipo.toLowerCase();
+  const base = {
+    numero: r.numero,
+    tipo: r.reclamo.tipo,
+    mensaje: textoPlano(r),
+    nombre_negocio: CONFIG.nombreComercial,
+    nombre_cliente: r.consumidor.nombres,
+    email_cliente: r.consumidor.email,
+    reply_to: r.consumidor.email
+  };
+  const envio = (extra) => emailjs.send(c.serviceId, c.templateId, { ...base, ...extra }, { publicKey: c.publicKey });
+
+  const [rest, cli] = await Promise.allSettled([
+    envio({
+      to_email: CONFIG.emailDestino,
+      asunto: `Nueva ${tipo} ${r.numero} - ${CONFIG.nombreComercial}`,
+      intro: `Se registró una nueva ${tipo} en el Libro de Reclamaciones virtual de ${CONFIG.nombreComercial}.`
+    }),
+    envio({
+      to_email: r.consumidor.email,
+      asunto: `Constancia de tu ${tipo} ${r.numero} - ${CONFIG.nombreComercial}`,
+      intro: `Hola ${r.consumidor.nombres}, hemos recibido tu ${tipo}. Esta es tu constancia. Te responderemos en un plazo máximo de 15 días hábiles al correo que registraste.`
     })
-  });
-  if (!res.ok) throw new Error("Error al enviar");
+  ]);
+  return { restaurante: rest.status === "fulfilled", cliente: cli.status === "fulfilled" };
 }
 
 $("claimForm").addEventListener("submit", async (e) => {
@@ -494,11 +522,14 @@ $("claimForm").addEventListener("submit", async (e) => {
   $("sheetView").classList.remove("hidden");
   window.scrollTo({ top: 0, behavior: "smooth" });
 
-  if (CONFIG.formspreeUrl) {
-    try {
-      await enviarFormspree(lastRecord);
-      mostrarEstado("ok", "Tu reclamación fue registrada y enviada al establecimiento. Guarda o imprime esta hoja como constancia.");
-    } catch (err) {
+  if (emailjsListo()) {
+    mostrarEstado("warn", "Registrando tu reclamación y enviando las copias por correo…");
+    const res = await enviarCorreos(lastRecord);
+    if (res.restaurante && res.cliente) {
+      mostrarEstado("ok", `Tu reclamación fue registrada. Enviamos una copia a ${lastRecord.consumidor.email} y al establecimiento. Guarda o imprime esta hoja como constancia.`);
+    } else if (res.restaurante) {
+      mostrarEstado("warn", "Tu reclamación fue enviada al establecimiento, pero no pudimos enviarte la copia por correo. Verifica tu dirección de correo y guarda o imprime esta hoja como constancia.");
+    } else {
       mostrarEstado("warn", "No pudimos enviar la reclamación automáticamente. Usa el botón «Enviar copia por correo» y guarda esta hoja como constancia.");
     }
   } else {
